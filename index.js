@@ -92,10 +92,19 @@ Elasticsearch.prototype.name = 'elasticsearch';
  * log() method
  */
 Elasticsearch.prototype.log = function log(level, message, meta, callback) {
+  
+  /*  transformed['@timestamp'] = logData.timestamp ? logData.timestamp : new Date().toISOString();
+  transformed.message = logData.message;
+  transformed.severity = logData.level;
+  transformed.process = logData.process;
+  transformed.logtype = logData.logtype;
+  transformed.fields = logData.meta;*/
   const logData = {
     message,
     level,
     meta,
+    process: this.options.process,
+    logtype: this.options.logtype,
     timestamp: this.options.timestamp()
   };
   const entry = this.options.transformer(logData);
