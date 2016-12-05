@@ -13,6 +13,8 @@ const transformer = function transformer(logData) {
   transformed['@timestamp'] = logData.timestamp ? logData.timestamp : new Date().toISOString();
   transformed.message = logData.message;
   transformed.severity = logData.level;
+  transformed.process = logData.process;
+  transformed.logtype = logData.logtype;
   transformed.fields = logData.meta;
   return transformed;
 };
