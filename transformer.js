@@ -8,9 +8,12 @@
  @param {Object} logData.meta - the log meta data
  @returns {Object} transformed message
  */
+const hostname = require("os").hostname();
 const transformer = function transformer(logData) {
+
   const transformed = {};
   transformed['@timestamp'] = logData.timestamp ? logData.timestamp : new Date().toISOString();
+  transformed.host = hostname;
   transformed.message = logData.message;
   transformed.severity = logData.level;
   transformed.process = logData.process;
