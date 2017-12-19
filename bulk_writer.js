@@ -1,10 +1,11 @@
 const Promise = require('promise');
 const debug = require('debug')('bulk writer');
 
-const BulkWriter = function BulkWriter(client, interval, waitForActiveShards) {
+const BulkWriter = function BulkWriter(client, options) {
   this.client = client;
-  this.interval = interval || 5000;
-  this.waitForActiveShards = waitForActiveShards;
+  this.interval = options.interval || 5000;
+  this.waitForActiveShards = options.waitForActiveShards;
+  this.pipeline = options.pipeline;
 
   this.bulk = []; // bulk to be flushed
   this.running = false;
@@ -39,12 +40,12 @@ BulkWriter.prototype.tick = function tick() {
   const thiz = this;
   if (!this.running) { return; }
   this.flush()
-  .catch((e) => {
-    throw e;
-  })
-  .then(() => {
-    thiz.schedule();
-  });
+    .catch((e) => {
+      throw e;
+    })
+    .then(() => {
+      thiz.schedule();
+    });
 };
 
 BulkWriter.prototype.flush = function flush() {
@@ -76,7 +77,7 @@ BulkWriter.prototype.flush = function flush() {
 BulkWriter.prototype.append = function append(index, type, doc) {
   this.bulk.push({
     index: {
-      _index: index, _type: type
+      _index: index, _type: type, pipeline: this.pipeline
     }
   });
   this.bulk.push(doc);

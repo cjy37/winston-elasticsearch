@@ -1,3 +1,27 @@
+0.5.5 / 2017-12-15
+==================
+
+- Fix issue with loading built-in mapping
+- Upgrade to Elasticsearch client 14 (Elasticsearch 6)
+- Ignore 404 errors for silent creation of new indexes
+
+0.5.3 / 2017-10-02
+==================
+
+- Upgrade to Winston 2.4.0
+
+0.5.2 / 2017-09-28
+==================
+
+- Add pipeline option for elasticsearch
+
+0.5.1 / 2017-09-24
+==================
+
+- Upgrade all deps
+- Fix linting issues
+- Fix loading of template file previously done with require()
+
 0.5.0 / 2016-12-01
 ==================
 

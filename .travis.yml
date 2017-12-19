@@ -7,6 +7,7 @@ addons:
       - oracle-java8-set-default
 node_js:
   - "6"
+  - "8"
 jdk:
   - oraclejdk8
 env:
@@ -14,17 +15,20 @@ env:
     - COVERALLS=1
     - WAIT_FOR_ES=1
   matrix:
-    - ES_VERSION=5.0.1
+    - ES_VERSION=5.1.1
 install:
   - mkdir /tmp/elasticsearch
   - wget -O - https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ES_VERSION}.tar.gz | tar xz --directory=/tmp/elasticsearch --strip-components=1
-  - /tmp/elasticsearch/bin/elasticsearch --daemonize --path.data /tmp
+  - /tmp/elasticsearch/bin/elasticsearch --daemonize -E path.data=/tmp
+  - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
   - npm install
 git:
   depth: 10
 before_install:
+  - sudo update-java-alternatives -s java-8-oracle
+  - echo $JAVA_HOME
+  - which java
   - java -version
-  - 'npm config set loglevel error'
 before_script:
   - sleep 10
 after_success:

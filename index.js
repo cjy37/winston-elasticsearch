@@ -1,6 +1,8 @@
 'use strict';
 
 const util = require('util');
+const fs = require('fs');
+const path = require('path');
 const Promise = require('promise');
 const stream = require('stream');
 const winston = require('winston');
@@ -36,7 +38,8 @@ const Elasticsearch = function Elasticsearch(options) {
     ensureMappingTemplate: true,
     flushInterval: 2000,
     waitForActiveShards: 1,
-    handleExceptions: false
+    handleExceptions: false,
+    pipeline: null
   };
   _.defaults(options, defaults);
   winston.Transport.call(this, options);
@@ -62,7 +65,8 @@ const Elasticsearch = function Elasticsearch(options) {
           {
             type: 'stream',
             level: 'error',
-            stream: new NullStream()
+            stream: new NullStream(),
+            ignore: [404],
           }
         ]
       }
@@ -74,12 +78,20 @@ const Elasticsearch = function Elasticsearch(options) {
     this.client = new elasticsearch.Client(this.options.clientOpts);
   }
 
-  this.bulkWriter = new BulkWriter(this.client,
-      options.flushInterval, options.waitForActiveShards);
+  const bulkWriterOptions = {
+    interval: options.flushInterval,
+    waitForActiveShards: options.waitForActiveShards,
+    pipeline: options.pipeline
+  };
+
+  this.bulkWriter = new BulkWriter(
+    this.client,
+    bulkWriterOptions
+  );
   this.bulkWriter.start();
 
   // Conduct initial connection check (sets connection state for further use)
-  this.checkEsConnection().then((connectionOk) => {});
+  this.checkEsConnection().then((connectionOk) => { });
 
   return this;
 };
@@ -158,8 +170,9 @@ Elasticsearch.prototype.checkEsConnection = function checkEsConnection() {
           }
           thiz.esConnection = false;
           thiz.emit('error', err);
-          reject(false);
-        });
+          reject(new Error('Cannot connect to ES'));
+        }
+      );
     });
   });
 };
@@ -175,10 +188,11 @@ Elasticsearch.prototype.search = function search(q) {
 
 Elasticsearch.prototype.ensureMappingTemplate = function ensureMappingTemplate(fulfill, reject) {
   const thiz = this;
+  // eslint-disable-next-line prefer-destructuring
   let mappingTemplate = thiz.options.mappingTemplate;
   if (mappingTemplate === null || typeof mappingTemplate === 'undefined') {
-    // eslint-disable-next-line import/no-unresolved, import/no-extraneous-dependencies
-    mappingTemplate = require('index-template-mapping.json');
+    const rawdata = fs.readFileSync(path.join(__dirname, 'index-template-mapping.json'));
+    mappingTemplate = JSON.parse(rawdata);
   }
   const tmplCheckMessage = {
     name: 'template_' + thiz.options.indexPrefix
@@ -195,14 +209,17 @@ Elasticsearch.prototype.ensureMappingTemplate = function ensureMappingTemplate(f
           body: mappingTemplate
         };
         thiz.client.indices.putTemplate(tmplMessage).then(
-        (res1) => {
-          fulfill(res1);
-        },
-        (err1) => {
-          reject(err1);
-        });
+          (res1) => {
+            fulfill(res1);
+          },
+          (err1) => {
+            reject(err1);
+          }
+        );
       }
-    });
+    }
+  );
 };
 
-module.exports = winston.transports.Elasticsearch = Elasticsearch;
+winston.transports.Elasticsearch = Elasticsearch;
+module.exports = Elasticsearch;
